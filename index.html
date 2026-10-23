@@ -1,431 +1,449 @@
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>اسکنر شکاف LBank</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اسکنر فیلتر شکاف LBank</title>
 <style>
-:root{color-scheme:dark}
-body{margin:0;background:#10151f;color:#edf2fa;font-family:Tahoma,Arial,sans-serif}
-main{max-width:1100px;margin:auto;padding:16px}
-h2{margin:8px 0 14px}
-p,.muted{color:#aab8cb;font-size:13px;line-height:1.8}
-button{background:#3478f6;color:white;border:0;border-radius:9px;padding:12px 16px;font-weight:bold;margin:4px;cursor:pointer}
+*{box-sizing:border-box}
+body{margin:0;background:#10151e;color:#edf2f7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:14px}
+main{max-width:1000px;margin:auto}
+h2{margin:8px 0;color:#8de1c0}
+p{line-height:1.8;color:#c2ccda}
+button{border:0;border-radius:10px;background:#27b487;color:#061a14;font-size:16px;font-weight:700;padding:13px 18px;margin:8px 0;cursor:pointer}
 button:disabled{opacity:.5}
-.panel{background:#192231;border:1px solid #2c394c;border-radius:12px;padding:13px;margin:10px 0}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.stat{background:#101722;border-radius:8px;padding:10px;overflow-wrap:anywhere}
-.stat b{display:block;font-size:19px;margin-top:8px}
-.status{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.8}
-.good{color:#6ee7a0}.bad{color:#ff9292}.warn{color:#ffd166}
-.wrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;min-width:800px;font-size:12px}
-th,td{border-bottom:1px solid #344054;padding:10px 8px;text-align:right;white-space:nowrap}
-th{background:#202d40;position:sticky;top:0}
-input,select{background:#101722;color:white;border:1px solid #45556d;padding:9px;border-radius:7px;max-width:100%}
-a{color:#8db7ff}
+.panel{background:#1b2432;border:1px solid #344154;border-radius:12px;padding:13px;margin:12px 0;overflow-wrap:anywhere}
+.status{white-space:pre-wrap;line-height:1.8;font-size:14px}
+.small{font-size:12px;color:#aab7c8}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+th,td{padding:10px 8px;border-bottom:1px solid #354154;text-align:center}
+th{background:#263448;color:#a7f3d0;position:sticky;top:0}
+.tablewrap{overflow-x:auto;border-radius:10px}
+.good{color:#72e6b3}.warn{color:#ffd479}.bad{color:#ff9292}
+.pill{display:inline-block;padding:4px 8px;border-radius:7px;background:#2b394d;margin:3px}
+input{width:100%;padding:10px;border-radius:8px;border:1px solid #44536a;background:#10151e;color:white}
 </style>
 </head>
 <body>
 <main>
-<h2>🔎 اسکنر فیلتر شکاف — فقط LBank</h2>
-<p>منبع داده‌ها فقط APIهای عمومی LBank است. این ابزار معامله انجام نمی‌دهد. معیارهای فاقد داده معتبر، امتیاز نمی‌گیرند.</p>
+<h2>🔎 اسکنر فیلتر شکاف — LBank</h2>
+<p>
+هدف: یافتن اختلاف حجم فیوچرز و اسپات، بررسی رفتار قیمت و شناسایی نامزدهای احتمالی پیش از حرکت.
+این اسکنر فقط از APIهای LBank استفاده می‌کند؛ هر شرطی که دادهٔ معتبر نداشته باشد، تأییدشده محسوب نمی‌شود.
+</p>
 
 <div class="panel">
-  <button id="scan">شروع اسکن</button>
-  <button id="csv" disabled>خروجی CSV</button>
-  <button id="clear">پاک‌کردن نتایج</button>
-  <p>تعداد کندل‌های بررسی‌شده برای هر اجرا را انتخاب کن:</p>
-  <select id="limit">
-    <option value="30">۳۰ نماد</option>
-    <option value="60" selected>۶۰ نماد</option>
-    <option value="100">۱۰۰ نماد</option>
-    <option value="150">۱۵۰ نماد</option>
-  </select>
-  <p class="muted">برای جلوگیری از محدودیت API، نمادهای دارای گردش مالی بیشتر زودتر بررسی می‌شوند. این به معنی بررسی کندل تمام نمادهای اسپات نیست.</p>
-</div>
-
-<div class="panel stats">
-  <div class="stat">نمادهای اسپات دریافت‌شده<b id="spotCount">—</b></div>
-  <div class="stat">کندل‌های بررسی‌شده<b id="candleCount">0</b></div>
-  <div class="stat">نامزدهای نمایشی<b id="candidateCount">0</b></div>
+  <div>وضعیت: <strong id="status">آمادهٔ شروع</strong></div>
+  <div id="details" class="status small">هنوز اسکن اجرا نشده است.</div>
+  <button id="scanBtn" onclick="startScan()">🚀 شروع اسکن</button>
+  <button onclick="testSpot()" style="background:#6da8ff;color:#081426">🧪 تست اتصال اسپات</button>
 </div>
 
 <div class="panel">
-  <b>وضعیت اتصال و داده‌ها</b>
-  <div id="status" class="status">آماده شروع</div>
+  <strong>📌 تعریف فیلتر شکاف</strong>
+  <p class="small">
+  ۱) نسبت حجم فیوچرز به اسپات بیشتر از ۱۰ برابر؛
+  ۲) افزایش نسبت نسبت به میانگین ۷ روز گذشته؛
+  ۳) افزایش OI بدون حرکت شدید قیمت؛
+  ۴) افزایش خرید اسپات و حفظ کف قیمت.
+  </p>
+  <p class="small">
+  حجم ۲۴ساعتهٔ اسپات و فیوچرز الزاماً معیار زمانی یکسانی دارند.
+  این نسبت یک نشانهٔ اولیه است، نه اثبات ورود پول یا پیش‌بینی پامپ.
+  </p>
 </div>
 
 <div class="panel">
-  <b>نتایج اسکن</b>
-  <p class="muted">امتیاز از ۵ فقط امتیاز معیارهای قابل محاسبه است. شروطی که داده معتبر ندارند، «نامشخص» می‌مانند و امتیازشان صفر یا مثبت فرض نمی‌شود.</p>
-  <div class="wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>نماد</th><th>قیمت</th><th>تغییر ۲۴ساعته</th>
-          <th>گردش مالی ۲۴ساعته</th><th>رشد حجم نسبت به میانگین</th>
-          <th>وضعیت بیس</th><th>نسبت فیوچرز/اسپات</th>
-          <th>امتیاز قابل محاسبه</th><th>کمبود داده</th>
-        </tr>
-      </thead>
-      <tbody id="rows"><tr><td colspan="9">هنوز اسکن انجام نشده است.</td></tr></tbody>
-    </table>
+  <strong>نتیجهٔ اسکن</strong>
+  <div id="summary" class="status">نتیجه‌ای در دسترس نیست.</div>
+</div>
+
+<div class="panel">
+  <strong>نامزدها</strong>
+  <div class="tablewrap">
+  <table>
+  <thead>
+  <tr>
+    <th>ارز</th>
+    <th>قیمت اسپات</th>
+    <th>تغییر ۲۴ساعته</th>
+    <th>حجم اسپات (USDT)</th>
+    <th>حجم فیوچرز</th>
+    <th>نسبت فیوچرز/اسپات</th>
+    <th>وضعیت شروط</th>
+  </tr>
+  </thead>
+  <tbody id="results">
+  <tr><td colspan="7">برای شروع اسکن دکمه را بزن.</td></tr>
+  </tbody>
+  </table>
   </div>
 </div>
 
 <div class="panel">
-  <b>توضیح شروط فیلتر شکاف</b>
-  <p>۱. نسبت حجم فیوچرز به اسپات بیشتر از ۱۰ برابر: فقط در صورت تطبیق مطمئن نماد و واحد حجم.</p>
-  <p>۲. رشد نسبت نسبت به میانگین هفت‌روزه: نیازمند تاریخچه قابل‌مقایسه از هر دو بازار است؛ اگر فراهم نشود، نامشخص می‌ماند.</p>
-  <p>۳. افزایش OI: تا زمانی که داده معتبر OI از API عمومی LBank تأیید نشده باشد، نامشخص است.</p>
-  <p>۴. افزایش تقاضای اسپات: این نسخه از رشد گردش مالی کندل‌ها به‌عنوان نشانه کمکی استفاده می‌کند، نه اثبات حجم خرید خالص.</p>
-  <p>۵. حفظ کف و فشردگی قیمت: از کندل‌های یک‌ساعته قابل بررسی است؛ تضمینی برای پامپ نیست.</p>
+  <strong>🛠 خطاها و محدودیت‌های داده</strong>
+  <div id="errors" class="status small">هنوز خطایی ثبت نشده است.</div>
 </div>
+
+<p class="small">
+منبع اسپات: api.lbank.info — منبع عمومی قرارداد: lbkperp.lbank.com.
+اگر مرورگر دسترسی Cross-Origin را مسدود کند، اسکنر استاتیک بدون سرور یا پراکسی قابل‌اعتماد نمی‌تواند آن را به‌تنهایی دور بزند.
+</p>
 </main>
 
 <script>
 "use strict";
 
-const API = "https://api.lbkex.com";
+const SPOT_API = "https://api.lbank.info";
 const FUTURES_API = "https://lbkperp.lbank.com";
 const $ = id => document.getElementById(id);
 
-let results = [];
 let busy = false;
+let errorList = [];
 
-function setStatus(message, type="") {
-  $("status").className = "status " + type;
-  $("status").textContent = message;
+function setStatus(s) { $("status").textContent = s; }
+function addError(msg) {
+  errorList.push(String(msg));
+  $("errors").textContent = errorList.slice(-12).join("\n");
 }
 function num(v) {
+  if (v === null || v === undefined || v === "") return NaN;
   const n = Number(v);
   return Number.isFinite(n) ? n : NaN;
 }
 function fmt(v, digits=4) {
-  if (!Number.isFinite(v)) return "—";
-  return v.toLocaleString("en-US",{maximumFractionDigits:digits});
+  const n = num(v);
+  if (!Number.isFinite(n)) return "—";
+  return n.toLocaleString("en-US", {maximumFractionDigits:digits});
 }
 function pct(v) {
-  return Number.isFinite(v) ? (v>=0?"+":"")+v.toFixed(2)+"%" : "—";
+  const n = num(v);
+  return Number.isFinite(n) ? (n > 0 ? "+" : "") + n.toFixed(2) + "%" : "—";
 }
-function unpackTicker(json) {
-  if (!json || String(json.msg||"").toLowerCase() !== "success") {
-    throw new Error("پاسخ تیکر LBank موفق نبود: " + JSON.stringify(json).slice(0,220));
-  }
-  const data = Array.isArray(json.data) ? json.data : [];
-  return data.map(x => {
-    const t = x.ticker || x;
-    return {
-      symbol: String(x.symbol || t.symbol || "").toLowerCase(),
-      price: num(t.latest),
-      high: num(t.high),
-      low: num(t.low),
-      change: num(t.change),
-      vol: num(t.vol),
-      turnover: num(t.turnover),
-      timestamp: num(x.timestamp || json.ts)
-    };
-  }).filter(x => x.symbol && x.symbol.endsWith("_usdt") &&
-    Number.isFinite(x.price) && x.price > 0);
+function normSymbol(s) {
+  return String(s || "").toUpperCase().replace(/[^A-Z0-9]/g,"")
+    .replace(/(USDT|USDC|USD|PERP)$/,"");
 }
-async function getJSON(url, timeout=15000) {
+function isSuccess(json) {
+  if (!json || typeof json !== "object") return false;
+  const m = String(json.msg || json.message || "").toLowerCase();
+  return json.result === true || m === "success" || m === "successful"
+    || json.code === 200 || json.code === "200";
+}
+
+async function getJSON(url, timeout=18000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
-    const response = await fetch(url, {
-      method:"GET",
-      cache:"no-store",
-      signal:controller.signal
-    });
-    if (!response.ok) throw new Error("HTTP " + response.status + " — " + url);
-    return await response.json();
+    let response;
+    try {
+      response = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+        signal: controller.signal
+      });
+    } catch (e) {
+      const reason = e && e.name === "AbortError"
+        ? "مهلت اتصال تمام شد"
+        : "خطای اتصال/CORS: " + (e && e.message ? e.message : String(e));
+      throw new Error(reason + "\nآدرس: " + url);
+    }
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status + "\nآدرس: " + url);
+    }
+    let json;
+    try { json = await response.json(); }
+    catch (_) { throw new Error("پاسخ JSON معتبر نیست\nآدرس: " + url); }
+    return json;
   } finally {
     clearTimeout(timer);
   }
 }
-async function fetchSpotAll() {
-  const url = API + "/v2/ticker/24hr.do?symbol=all";
-  return unpackTicker(await getJSON(url));
-}
-async function fetchCandles(symbol, type="hour1", size=200) {
-  const nowSec = Math.floor(Date.now()/1000);
-  const url = API + "/v2/kline.do?symbol=" +
-    encodeURIComponent(symbol) + "&type=" + encodeURIComponent(type) +
-    "&size=" + size + "&time=" + nowSec;
-  const json = await getJSON(url);
-  if (!json || String(json.msg||"").toLowerCase() !== "success" ||
-      !Array.isArray(json.data)) {
-    throw new Error("ساختار کندل نامعتبر برای " + symbol);
-  }
-  return json.data.map(c => ({
-    time:num(c[0]), open:num(c[1]), high:num(c[2]),
-    low:num(c[3]), close:num(c[4]), volume:num(c[5])
-  })).filter(c => [c.time,c.open,c.high,c.low,c.close,c.volume]
-    .every(Number.isFinite) && c.close > 0)
-    .sort((a,b)=>a.time-b.time);
-}
-function quoteValue(c) {
-  return Math.max(0,c.volume) * Math.max(0,c.close);
-}
-function analyzeCandles(candles) {
-  if (!candles || candles.length < 30) {
-    return {
-      growth:NaN, base:false, floor:false,
-      note:"کندل کافی نیست"
-    };
-  }
-  // حذف کندل جاری که ممکن است هنوز بسته نشده باشد
-  const completed = candles.slice(0,-1);
-  if (completed.length < 25) {
-    return {growth:NaN,base:false,floor:false,note:"کندل کامل کافی نیست"};
-  }
-  const last24 = completed.slice(-24);
-  const prior7 = completed.slice(-24*7,-24);
-  const avgPrior = prior7.length
-    ? prior7.reduce((s,c)=>s+quoteValue(c),0)/prior7.length : NaN;
-  const recentAvg = last24.reduce((s,c)=>s+quoteValue(c),0)/last24.length;
-  const growth = avgPrior > 0 ? (recentAvg/avgPrior-1)*100 : NaN;
 
-  const recent = completed.slice(-6);
-  const previous = completed.slice(-12,-6);
-  const recentLow = Math.min(...recent.map(c=>c.low));
-  const previousLow = Math.min(...previous.map(c=>c.low));
-  const recentHigh = Math.max(...recent.map(c=>c.high));
-  const recentClose = recent[recent.length-1].close;
-  const rangePct = recentClose > 0
-    ? (recentHigh-recentLow)/recentClose*100 : NaN;
-  const floor = Number.isFinite(previousLow) &&
-    recentLow >= previousLow*0.99;
-  const base = Number.isFinite(rangePct) && rangePct <= 5 && floor;
-  return {growth,base,floor,note:""};
-}
-function normalizeBase(symbol) {
-  let s = String(symbol||"").toLowerCase().replace(/[^a-z0-9]/g,"");
-  if (s.endsWith("usdt")) s=s.slice(0,-4);
-  else if (s.endsWith("usd")) s=s.slice(0,-3);
-  return s;
-}
-async function fetchFuturesMarket() {
-  // productGroup=SwapU طبق مستندات قرارداد LBank
-  const url = FUTURES_API +
-    "/cfd/openApi/v1/pub/marketData?productGroup=SwapU";
-  const json = await getJSON(url);
+function getTickerArray(json) {
   if (Array.isArray(json)) return json;
   if (json && Array.isArray(json.data)) return json.data;
-  if (json && Array.isArray(json.result)) return json.result;
-  throw new Error("ساختار پاسخ بازار فیوچرز شناخته نشد: " +
-    JSON.stringify(json).slice(0,220));
+  if (json && json.data && Array.isArray(json.data.ticker)) return json.data.ticker;
+  if (json && json.ticker && Array.isArray(json.ticker)) return json.ticker;
+  return [];
 }
-function mapFuturesMarket(data) {
-  const map = new Map();
-  for (const x of data) {
-    const symbol = String(x.symbol || x.symbolName || "");
-    const base = normalizeBase(symbol);
-    const turnover = num(x.turnover);
-    const volume = num(x.volume);
-    const price = num(x.lastPrice);
-    if (base && Number.isFinite(turnover) && turnover > 0) {
-      map.set(base,{symbol,turnover,volume,price});
+
+function tickerToRecord(item) {
+  const t = item && item.ticker && typeof item.ticker === "object"
+    ? item.ticker : item;
+  const symbol = String(item.symbol || item.pair || t.symbol || "").toLowerCase();
+  const price = num(t.latest ?? t.last ?? t.close ?? t.lastPrice);
+  const turnover = num(t.turnover ?? t.quoteVolume ?? t.quote_volume);
+  const vol = num(t.vol ?? t.volume ?? t.baseVolume);
+  const changeRaw = num(t.change ?? t.changeRate ?? t.priceChangePercent);
+  let change = changeRaw;
+  // LBank's change field may be a decimal fraction; normalize only when clearly fractional.
+  if (Number.isFinite(change) && Math.abs(change) <= 1) change *= 100;
+  return {symbol, base:normSymbol(symbol), price, turnover, vol, change, raw:item};
+}
+
+async function fetchSpotAll() {
+  const url = SPOT_API + "/v2/ticker/24hr.do?symbol=all";
+  const json = await getJSON(url);
+  const arr = getTickerArray(json);
+  if (!arr.length) {
+    throw new Error("دادهٔ تیکر اسپات خالی یا ناشناخته است. پاسخ: "
+      + JSON.stringify(json).slice(0,500) + "\nآدرس: " + url);
+  }
+  return arr.map(tickerToRecord).filter(x =>
+    x.symbol && x.base && Number.isFinite(x.price) && x.price > 0
+  );
+}
+
+async function fetchFuturesAll() {
+  const url = FUTURES_API + "/cfd/openApi/v1/pub/marketData?productGroup=SwapU";
+  const json = await getJSON(url);
+  let arr = [];
+  if (Array.isArray(json)) arr = json;
+  else if (Array.isArray(json.data)) arr = json.data;
+  else if (json.data && Array.isArray(json.data.list)) arr = json.data.list;
+  else if (json.data && Array.isArray(json.data.records)) arr = json.data.records;
+  if (!arr.length) {
+    throw new Error("فهرست قراردادهای فیوچرز خالی یا با قالب ناشناخته برگشت. پاسخ: "
+      + JSON.stringify(json).slice(0,500) + "\nآدرس: " + url);
+  }
+  return arr.map(item => {
+    const symbol = String(item.symbol || item.contractCode || item.productCode || "");
+    return {
+      symbol,
+      base:normSymbol(symbol),
+      volume:num(item.volume ?? item.vol),
+      turnover:num(item.turnover ?? item.quoteVolume ?? item.amount),
+      lastPrice:num(item.lastPrice ?? item.close ?? item.price),
+      raw:item
+    };
+  }).filter(x => x.base);
+}
+
+async function fetchCandles(symbol) {
+  const safeSymbol = encodeURIComponent(symbol);
+  const now = Math.floor(Date.now()/1000);
+  const url = SPOT_API + "/v2/kline.do?symbol=" + safeSymbol
+    + "&type=hour1&size=72&time=" + now;
+  const json = await getJSON(url, 15000);
+  const arr = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
+  if (!arr.length) throw new Error("کندل خالی برای " + symbol);
+  return arr.map(c => ({
+    time:num(c[0]), open:num(c[1]), high:num(c[2]),
+    low:num(c[3]), close:num(c[4]), volume:num(c[5])
+  })).filter(c => Number.isFinite(c.close) && c.close > 0);
+}
+
+function evaluateCandles(candles) {
+  if (!candles || candles.length < 12) {
+    return {valid:false, floor:false, calm:false, volumeRise:false, note:"کندل کافی نیست"};
+  }
+  // LBank typically returns newest first; sort chronologically.
+  const cs = [...candles].sort((a,b) => a.time-b.time);
+  const recent = cs.slice(-6);
+  const prior = cs.slice(-24,-6);
+  if (recent.length < 6 || prior.length < 6) {
+    return {valid:false, floor:false, calm:false, volumeRise:false, note:"سابقهٔ کندل ناکافی"};
+  }
+  const lows = recent.map(c=>c.low).filter(Number.isFinite);
+  const floor = lows.length > 0 && Number.isFinite(cs[cs.length-1].close)
+    && cs[cs.length-1].close >= Math.min(...lows) * 1.005;
+  const start = recent[0].close;
+  const end = recent[recent.length-1].close;
+  const move = start > 0 ? (end-start)/start*100 : NaN;
+  const calm = Number.isFinite(move) && Math.abs(move) <= 8;
+  const recentVol = recent.reduce((s,c)=>s+(Number.isFinite(c.volume)?c.volume:0),0)/recent.length;
+  const priorVol = prior.reduce((s,c)=>s+(Number.isFinite(c.volume)?c.volume:0),0)/prior.length;
+  const volumeRise = priorVol > 0 && recentVol >= priorVol*1.25;
+  return {valid:true, floor, calm, volumeRise, move, note:"بررسی کندل ۱ساعته"};
+}
+
+async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      try { out[i] = await fn(items[i], i); }
+      catch (e) { out[i] = {error:e && e.message ? e.message : String(e)}; }
     }
   }
-  return map;
+  await Promise.all(Array.from({length:Math.min(limit,items.length)},worker));
+  return out;
 }
-function escapeHTML(s) {
-  return String(s).replace(/[&<>"']/g,c=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[c]));
+
+function pickSpotSymbolForCandle(s) {
+  // LBank kline expects the exchange pair spelling, e.g. btc_usdt.
+  return s.symbol;
 }
-function scoreRow(r) {
-  let score = 0;
-  let known = 0;
-  if (Number.isFinite(r.ratio)) {
-    known++;
-    if (r.ratio > 10) score++;
+
+async function testSpot() {
+  errorList = [];
+  $("errors").textContent = "در حال آزمایش اتصال...";
+  setStatus("در حال تست اسپات");
+  try {
+    const json = await getJSON(SPOT_API + "/v2/ticker/24hr.do?symbol=btc_usdt");
+    $("details").textContent = "پاسخ تست اسپات:\n" + JSON.stringify(json).slice(0,1600);
+    setStatus(isSuccess(json) || getTickerArray(json).length ? "اتصال پاسخ داد" : "پاسخ دریافت شد؛ قالب نیازمند بررسی است");
+    $("errors").textContent = "اگر پیام خطا یا دادهٔ غیرمنتظره می‌بینی، متن پاسخ بالا را بررسی کن.";
+  } catch(e) {
+    addError(e.message);
+    setStatus("تست اتصال ناموفق");
+    $("details").textContent = "اتصال مستقیم اسپات موفق نشد.";
   }
-  if (Number.isFinite(r.growth)) {
-    known++;
-    if (r.growth > 50) score++;
-  }
-  if (r.base !== null) {
-    known++;
-    if (r.base) score++;
-  }
-  // OI و افزایش خالص خرید اسپات بدون endpoint معتبر، امتیاز نمی‌گیرند.
-  return {score,known};
 }
-function render() {
-  $("candidateCount").textContent = results.length;
-  $("csv").disabled = !results.length;
-  if (!results.length) {
-    $("rows").innerHTML = '<tr><td colspan="9">نامزدی با داده‌های فعلی ثبت نشده است.</td></tr>';
-    return;
-  }
-  $("rows").innerHTML = results.map(r => {
-    const ratioText = Number.isFinite(r.ratio) ? fmt(r.ratio,2)+"×" : "نامشخص";
-    const baseText = r.base === null ? "نامشخص" : r.base ? "فشردگی + کف حفظ شده" : "تأیید نشد";
-    const score = scoreRow(r);
-    const gaps = [];
-    if (!Number.isFinite(r.ratio)) gaps.push("حجم فیوچرز تطبیق‌پذیر نیست");
-    if (!Number.isFinite(r.growth)) gaps.push("تاریخچه مقایسه‌ای حجم ناقص");
-    gaps.push("OI تاریخی تأیید نشده");
-    gaps.push("حجم خرید خالص تأیید نشده");
-    if (r.error) gaps.push(r.error);
-    return `<tr>
-      <td><b>${escapeHTML(r.symbol.toUpperCase())}</b></td>
-      <td>${fmt(r.price,10)}</td>
-      <td>${pct(r.change)}</td>
-      <td>${fmt(r.turnover,0)} USDT*</td>
-      <td>${pct(r.growth)}</td>
-      <td>${baseText}</td>
-      <td>${ratioText}</td>
-      <td>${score.score}/${score.known} معیار قابل محاسبه</td>
-      <td>${escapeHTML([...new Set(gaps)].join("؛ "))}</td>
-    </tr>`;
-  }).join("");
-}
-async function runScan() {
+
+async function startScan() {
   if (busy) return;
   busy = true;
-  $("scan").disabled = true;
-  $("rows").innerHTML = "";
-  results = [];
-  $("candleCount").textContent = "0";
-  $("candidateCount").textContent = "0";
-  $("spotCount").textContent = "…";
-  setStatus("در حال اتصال به API اسپات LBank…");
+  errorList = [];
+  $("errors").textContent = "در حال بررسی...";
+  $("results").innerHTML = '<tr><td colspan="7">در حال دریافت اطلاعات بازار…</td></tr>';
+  $("summary").textContent = "اسکن شروع شد.";
+  $("scanBtn").disabled = true;
+  setStatus("در حال دریافت تیکر اسپات");
+
+  let spot = [];
+  let futures = [];
+  let futuresAvailable = false;
 
   try {
-    const spot = await fetchSpotAll();
-    $("spotCount").textContent = spot.length;
-    if (!spot.length) throw new Error("هیچ نماد USDT از تیکر LBank دریافت نشد.");
-
-    let futuresMap = new Map();
-    let futuresStatus = "";
-    try {
-      const futures = await fetchFuturesMarket();
-      futuresMap = mapFuturesMarket(futures);
-      futuresStatus = `فیوچرز: دریافت شد (${futures.length} بازار، ${futuresMap.size} بازار با گردش مالی قابل‌استفاده).`;
-    } catch (e) {
-      futuresStatus = "فیوچرز: در دسترس نیست — " + e.message;
-    }
-
-    const limit = Number($("limit").value) || 60;
-    const pool = spot.slice().sort((a,b)=>(b.turnover||0)-(a.turnover||0)).slice(0,limit);
-    let done = 0, failed = 0;
-    const concurrency = 4;
-    let index = 0;
-
-    async function worker() {
-      while (index < pool.length) {
-        const item = pool[index++];
-        try {
-          const candles = await fetchCandles(item.symbol,"hour1",200);
-          const a = analyzeCandles(candles);
-          const fut = futuresMap.get(normalizeBase(item.symbol));
-          let ratio = NaN;
-          // turnover فیوچرز در مستندات LBank وجود دارد؛ فقط نسبت هم‌نام و USDT محاسبه می‌شود.
-          if (fut && Number.isFinite(fut.turnover) && item.turnover > 0) {
-            ratio = fut.turnover / item.turnover;
-          }
-          results.push({
-            ...item,
-            growth:a.growth,
-            base:candles.length>=30 ? a.base : null,
-            ratio,
-            error:"",
-            candleCount:candles.length
-          });
-        } catch (e) {
-          failed++;
-          results.push({
-            ...item,growth:NaN,base:null,ratio:NaN,
-            error:"خطای کندل: "+e.message,candleCount:0
-          });
-        }
-        done++;
-        $("candleCount").textContent = done;
-        setStatus(
-          `اسپات LBank: ${spot.length} نماد\n`+
-          `${futuresStatus}\n`+
-          `در حال بررسی کندل‌ها: ${done}/${pool.length}\n`+
-          `خطاهای کندل: ${failed}\n`+
-          `توجه: endpoint عمومی OI تاریخی در این نسخه تأیید نشده است.`
-        );
-      }
-    }
-    await Promise.all(Array.from({length:concurrency},worker));
-    results.sort((a,b)=>{
-      const sa=scoreRow(a), sb=scoreRow(b);
-      return (sb.score/Math.max(1,sb.known))-(sa.score/Math.max(1,sa.known));
-    });
-    render();
-    setStatus(
-      `اسکن پایان یافت.\n`+
-      `نمادهای اسپات دریافت‌شده: ${spot.length}\n`+
-      `نمادهای کندل‌خوانی‌شده: ${done}\n`+
-      `خطاهای کندل: ${failed}\n`+
-      `${futuresStatus}\n`+
-      `محدودیت: این نسخه تمام شروط فیلتر شکاف را تأیید نمی‌کند؛ OI تاریخی و افزایش نسبت هفت‌روزه نامشخص‌اند. گردش مالی اسپات و فیوچرز ممکن است از نظر تعریف/واحد کاملاً همسان نباشد؛ نسبت را نشانه اولیه بدان، نه تأیید نهایی.`,
-      failed ? "warn" : "good"
-    );
-  } catch (e) {
-    setStatus(
-      "اسکن کامل نشد: " + e.message +
-      "\nممکن است API، شبکه، CORS یا محدودیت منطقه‌ای/درخواست عامل باشد."+
-      "\nهیچ امتیاز یا نتیجه‌ای به‌عنوان اسکن کامل ثبت نشده است.",
-      "bad"
-    );
-  } finally {
+    spot = await fetchSpotAll();
+  } catch(e) {
+    addError("دریافت اسپات ناموفق:\n" + e.message);
+    setStatus("اسکن متوقف شد: دریافت اسپات ناموفق");
+    $("summary").textContent = "هیچ نتیجه‌ای تولید نشد؛ ابتدا باید اتصال تیکر اسپات برقرار شود.";
+    $("results").innerHTML = '<tr><td colspan="7">دادهٔ اسپات دریافت نشد؛ امتیاز یا نامزد ساخته نشد.</td></tr>';
+    $("scanBtn").disabled = false;
     busy = false;
-    $("scan").disabled = false;
+    return;
   }
-}
-function downloadCSV() {
-  if (!results.length) return;
-  const header = [
-    "symbol","price","change24h","spotTurnover",
-    "volumeGrowthPct","baseHolding","futuresSpotRatio",
-    "score","knownCriteria","dataGaps"
-  ];
-  const rows = results.map(r => {
-    const s = scoreRow(r);
-    const gaps = [
-      !Number.isFinite(r.ratio) ? "futures ratio unavailable" : "",
-      !Number.isFinite(r.growth) ? "volume history unavailable" : "",
-      "historical OI unavailable",
-      "net spot buy volume unconfirmed",
-      r.error || ""
-    ].filter(Boolean).join("; ");
-    return [
-      r.symbol,r.price,r.change,r.turnover,r.growth,
-      r.base===null?"unknown":r.base,r.ratio,s.score,
-      s.known,gaps
-    ];
+
+  $("details").textContent = "تعداد رکوردهای اسپات دریافتی: " + spot.length
+    + "\nدر حال دریافت بازار فیوچرز LBank…";
+  setStatus("اسپات دریافت شد؛ دریافت فیوچرز");
+
+  try {
+    futures = await fetchFuturesAll();
+    futuresAvailable = true;
+  } catch(e) {
+    addError("دریافت فیوچرز ناموفق:\n" + e.message);
+  }
+
+  const futureByBase = new Map();
+  if (futuresAvailable) {
+    for (const f of futures) {
+      if (!futureByBase.has(f.base)) futureByBase.set(f.base, []);
+      futureByBase.get(f.base).push(f);
+    }
+  }
+
+  const candidates = spot
+    .filter(s => /usdt/i.test(s.symbol))
+    .filter(s => Number.isFinite(s.turnover) && s.turnover > 0)
+    .sort((a,b)=>b.turnover-a.turnover);
+
+  // Check candle behavior for up to 35 spot pairs to reduce rate limits.
+  const candleTargets = candidates.slice(0,35);
+  setStatus("در حال بررسی کندل‌های یک‌ساعته");
+  let finished = 0;
+  const candleResults = await mapLimit(candleTargets, 3, async s => {
+    const result = await fetchCandles(pickSpotSymbolForCandle(s));
+    finished++;
+    $("details").textContent = "اسپات: " + spot.length
+      + " | قراردادهای فیوچرز: " + (futuresAvailable ? futures.length : "نامشخص")
+      + " | کندل بررسی‌شده: " + finished + "/" + candleTargets.length;
+    return {base:s.base, candle:evaluateCandles(result)};
   });
-  const csv = [header,...rows].map(row =>
-    row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")
-  ).join("\r\n");
-  const blob = new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href=url;
-  a.download="lbank_gap_scan.csv";
-  a.click();
-  URL.revokeObjectURL(url);
+
+  const candleByBase = new Map();
+  candleResults.forEach((r,i)=>{
+    if (r && r.error) addError("کندل " + candleTargets[i].symbol + ": " + r.error);
+    else if (r) candleByBase.set(r.base,r.candle);
+  });
+
+  const rows = candidates.map(s=>{
+    const matches = futureByBase.get(s.base) || [];
+    const f = matches.find(x=>Number.isFinite(x.turnover) && x.turnover>0)
+      || matches.find(x=>Number.isFinite(x.volume) && x.volume>0);
+    const spotVol = s.turnover;
+    const futureVol = f ? (Number.isFinite(f.turnover) && f.turnover>0 ? f.turnover : f.volume) : NaN;
+    const ratio = Number.isFinite(futureVol) && spotVol>0 ? futureVol/spotVol : NaN;
+    const candle = candleByBase.get(s.base);
+    const ratioOK = Number.isFinite(ratio) && ratio > 10;
+    const floorOK = !!(candle && candle.valid && candle.floor);
+    const calmOK = !!(candle && candle.valid && candle.calm);
+    const volumeRiseOK = !!(candle && candle.valid && candle.volumeRise);
+    let evidence = [];
+    if (ratioOK) evidence.push("نسبت >۱۰");
+    if (floorOK) evidence.push("حفظ کف نسبی");
+    if (calmOK) evidence.push("حرکت محدود قیمت");
+    if (volumeRiseOK) evidence.push("افزایش حجم کندل");
+    if (!f) evidence.push("فیوچرز متناظر تأیید نشد");
+    if (!candle || !candle.valid) evidence.push("کندل ناکافی");
+    evidence.push("OI و میانگین ۷روزه تأیید نشده");
+    return {...s, futureVol, ratio, ratioOK, candle, evidence, futureFound:!!f};
+  });
+
+  // Rank only by observable signals. This is not a prediction score.
+  rows.sort((a,b)=>{
+    const as = (a.ratioOK?1:0) + (a.floorOK?1:0) + (a.calmOK?1:0) + (a.volumeRiseOK?1:0);
+    const bs = (b.ratioOK?1:0) + (b.floorOK?1:0) + (b.calmOK?1:0) + (b.volumeRiseOK?1:0);
+    return bs-as || (Number.isFinite(b.ratio)?b.ratio:0)-(Number.isFinite(a.ratio)?a.ratio:0);
+  });
+
+  const shown = rows.slice(0,50);
+  $("results").innerHTML = shown.map(r=>{
+    const ratioText = Number.isFinite(r.ratio) ? fmt(r.ratio,2)+"×" : "—";
+    const ratioClass = r.ratioOK ? "good" : "warn";
+    const changeClass = Number.isFinite(r.change) && r.change>0 ? "good" :
+      Number.isFinite(r.change) && r.change<0 ? "bad" : "";
+    const state = r.evidence.join("؛ ");
+    return `<tr>
+      <td><strong>${escapeHTML(r.base)}</strong></td>
+      <td>${fmt(r.price,8)}</td>
+      <td class="${changeClass}">${pct(r.change)}</td>
+      <td>${fmt(r.turnover,0)}</td>
+      <td>${fmt(r.futureVol,0)}</td>
+      <td class="${ratioClass}">${ratioText}</td>
+      <td>${escapeHTML(state)}</td>
+    </tr>`;
+  }).join("") || '<tr><td colspan="7">نامزدی پیدا نشد.</td></tr>';
+
+  const ratios = rows.filter(r=>r.ratioOK).length;
+  const candleCount = [...candleByBase.values()].filter(c=>c && c.valid).length;
+  $("summary").textContent =
+    "اسپات دریافتی: " + spot.length +
+    "\nجفت‌های USDT دارای حجم معتبر: " + candidates.length +
+    "\nقراردادهای فیوچرز دریافت‌شده: " + (futuresAvailable ? futures.length : "داده دریافت نشد") +
+    "\nجفت‌هایی با نسبت قابل‌محاسبه بیشتر از ۱۰ برابر: " + ratios +
+    "\nبررسی کندل موفق: " + candleCount + " از " + candleTargets.length +
+    "\nOI افزایشی: تأیید نشده" +
+    "\nافزایش نسبت نسبت به میانگین ۷ روز: تأیید نشده" +
+    "\nافزایش خرید واقعی اسپات: تأیید نشده" +
+    "\nنتیجه: این فهرست نامزدهای اولیه است، نه تأیید کامل فیلتر شکاف.";
+
+  $("details").textContent =
+    "زمان اسکن: " + new Date().toLocaleString() +
+    "\nتعداد رکوردهای اسپات: " + spot.length +
+    "\nجفت‌های بررسی‌شده برای کندل: " + candleTargets.length +
+    "\nتعداد کندل‌های معتبر: " + candleCount +
+    "\nنمایش: حداکثر ۵۰ ردیف نخست";
+
+  setStatus("اسکن تمام شد؛ محدودیت داده را در نتایج ببین");
+  if (!errorList.length) $("errors").textContent = "خطای دریافت ثبت نشد؛ با این حال بعضی معیارهای فیلتر شکاف هنوز از این داده‌ها قابل تأیید نیستند.";
+  else $("errors").textContent = errorList.slice(-12).join("\n");
+  $("scanBtn").disabled = false;
+  busy = false;
 }
-$("scan").addEventListener("click",runScan);
-$("csv").addEventListener("click",downloadCSV);
-$("clear").addEventListener("click",()=>{
-  results=[];
-  $("rows").innerHTML='<tr><td colspan="9">نتایج پاک شدند.</td></tr>';
-  $("spotCount").textContent="—";
-  $("candleCount").textContent="0";
-  $("candidateCount").textContent="0";
-  $("csv").disabled=true;
-  setStatus("نتایج پاک شدند.");
-});
+
+function escapeHTML(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
 </script>
 </body>
 </html>
